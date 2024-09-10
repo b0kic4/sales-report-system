@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs-app
+    restart: unless-stopped
+    ports:
+      - '${PORT}:3000' # The app will use the port defined in .env
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      CLOUDAMQP_URL: ${CLOUDAMQP_URL}
+      NODE_ENV: production
+    depends_on:
+      - mongo
+      - rabbitmq
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:prod
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PW}
+    volumes:
+      - mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5672:5672' # RabbitMQ broker port
+      - '15672:15672' # RabbitMQ management console
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes:
+  mongo_data:
+    driver: local
